@@ -1,0 +1,362 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// =============================
+//   ESTRUCTURAS DE DATOS
+// =============================
+struct Usuario {
+    int idUsuario;
+    string nombre;
+    string correoElectronico;
+    string contraseña;
+    string direccion;
+    string metodoDePago;
+};
+
+struct Producto {
+    int idProducto;
+    string nombre;
+    string descripcion;
+    double precio;
+    int stock;
+};
+
+struct Comentario {
+    int idComentario;
+    string producto;
+    string usuario;
+    string comentario;
+    string fecha;
+};
+
+struct ProductoEnCarrito {
+    int idProducto;
+    string nombre;
+    double precio;
+    int cantidad;
+};
+
+
+vector<string> split(const string &s, char delim) {
+    vector<string> elems;
+    string item;
+    stringstream ss(s);
+    while (getline(ss, item, delim)) elems.push_back(item);
+    return elems;
+}
+
+
+//     PARTE DEL PARCIAL
+
+
+// =========================================================
+//  REPORTE A – TOP 5 MENOR STOCK  (PARCIAL)
+// =========================================================
+void reporteTop5MenorStock(const vector<Producto>& productos) {
+    vector<Producto> copia = productos;
+
+    sort(copia.begin(), copia.end(), [](const Producto& a, const Producto& b) {
+        return a.stock < b.stock;
+    });
+
+    cout << "\nTop 5 productos con menor stock:\n";
+    cout << left << setw(10) << "ID"
+         << setw(25) << "Nombre"
+         << setw(10) << "Stock" << "\n";
+    cout << string(50, '-') << "\n";
+
+    int limite = min(5, (int)copia.size());
+    for (int i = 0; i < limite; i++) {
+        cout << setw(10) << copia[i].idProducto
+             << setw(25) << copia[i].nombre
+             << setw(10) << copia[i].stock << "\n";
+    }
+}
+
+// =========================================================
+//  REPORTE B – CONTAR COMENTARIOS POR FECHA  (PARCIAL)
+// =========================================================
+void reporteCantidadComentariosFecha(const vector<Comentario>& comentarios, const string& fecha) {
+    int contador = 0;
+    for (const auto& c : comentarios) {
+        if (c.fecha == fecha) contador++;
+    }
+    cout << "\nCantidad de comentarios del " << fecha << ": " << contador << "\n";
+}
+
+// =========================================================
+//  REPORTE C – PRECIO MÁXIMO Y MÍNIMO  (PARCIAL)
+// =========================================================
+void reportePrecioMaxMin(const vector<Producto>& productos) {
+    if (productos.empty()) {
+        cout << "No hay productos.\n";
+        return;
+    }
+
+    double minP = productos[0].precio;
+    double maxP = productos[0].precio;
+
+    for (const auto& p : productos) {
+        minP = min(minP, p.precio);
+        maxP = max(maxP, p.precio);
+    }
+
+    cout << "\nReporte de precios:\n";
+    cout << "Precio mínimo: " << fixed << setprecision(2) << minP << "\n";
+    cout << "Precio máximo: " << fixed << setprecision(2) << maxP << "\n";
+}
+
+
+// =============================
+//      CARGA DE ARCHIVOS
+// =============================
+vector<Usuario> cargarUsuarios(const string &ruta) {
+    vector<Usuario> usuarios;
+    ifstream f(ruta);
+    if (!f.is_open()) {
+        cerr << "No se pudo abrir " << ruta << endl;
+        return usuarios;
+    }
+
+    string linea;
+    getline(f, linea);
+
+    while (getline(f, linea)) {
+        if (linea.empty()) continue;
+
+        auto campos = split(linea, ',');
+        if (campos.size() < 6) continue;
+
+        Usuario u;
+        u.idUsuario = stoi(campos[0]);
+        u.nombre = campos[1];
+        u.correoElectronico = campos[2];
+        u.contraseña = campos[3];
+        u.direccion = campos[4];
+
+        string mp = campos[5];
+        for (size_t i = 6; i < campos.size(); i++)
+            mp += "," + campos[i];
+
+        u.metodoDePago = mp;
+        usuarios.push_back(u);
+    }
+    return usuarios;
+}
+
+vector<Producto> cargarProductos(const string &ruta) {
+    vector<Producto> productos;
+    ifstream f(ruta);
+    if (!f.is_open()) {
+        cerr << "No se pudo abrir " << ruta << endl;
+        return productos;
+    }
+
+    string linea;
+    getline(f, linea);
+
+    while (getline(f, linea)) {
+        if (linea.empty()) continue;
+
+        auto campos = split(linea, ',');
+        if (campos.size() < 5) continue;
+
+        Producto p;
+        p.idProducto = stoi(campos[0]);
+        p.nombre = campos[1];
+        p.descripcion = campos[2];
+        p.precio = stod(campos[3]);
+        p.stock = stoi(campos[4]);
+
+        productos.push_back(p);
+    }
+    return productos;
+}
+
+vector<Comentario> cargarComentarios(const string &ruta) {
+    vector<Comentario> comentarios;
+    ifstream f(ruta);
+    if (!f.is_open()) return comentarios;
+
+    string linea;
+    getline(f, linea);
+
+    while (getline(f, linea)) {
+        if (linea.empty()) continue;
+
+        auto campos = split(linea, ',');
+        if (campos.size() < 5) continue;
+
+        Comentario c;
+        c.idComentario = stoi(campos[0]);
+        c.producto = campos[1];
+        c.usuario = campos[2];
+        c.comentario = campos[3];
+        c.fecha = campos[4];
+
+        comentarios.push_back(c);
+    }
+    return comentarios;
+}
+
+// =====================================================
+bool fechaMayorOIgual(const string &a, const string &b) {
+    return a >= b;
+}
+
+void listarProductosPorStock(const vector<Producto> &productos, int umbral = 15) {
+    cout << "\nProductos con stock menor a " << umbral << ":\n";
+    for (auto &p : productos) {
+        if (p.stock < umbral)
+            cout << p.idProducto << " - " << p.nombre << " (" << p.stock << ")\n";
+    }
+}
+
+void comentariosDesdeFecha(const vector<Comentario> &comentarios, const string &fecha) {
+    for (auto &c : comentarios) {
+        if (fechaMayorOIgual(c.fecha, fecha))
+            cout << "[" << c.fecha << "] " << c.usuario << ": " << c.comentario << "\n";
+    }
+}
+
+void listarUsuariosSinClave(const vector<Usuario> &usuarios) {
+    for (auto &u : usuarios) {
+        cout << u.idUsuario << " - " << u.nombre << " - " << u.correoElectronico << "\n";
+    }
+}
+
+int indiceProductoPorId(vector<Producto> &productos, int id) {
+    for (int i = 0; i < productos.size(); i++)
+        if (productos[i].idProducto == id) return i;
+    return -1;
+}
+
+void guardarCarritoEnArchivo(int idUsuario, const vector<ProductoEnCarrito> &carrito) {
+    string archivo = "Carrito_" + to_string(idUsuario) + ".txt";
+    ofstream f(archivo);
+
+    f << "idProducto,nombre,precio,cantidad,subtotal\n";
+    for (auto &p : carrito) {
+        f << p.idProducto << "," << p.nombre << "," << p.precio << "," << p.cantidad << "," << (p.precio * p.cantidad) << "\n";
+    }
+
+    cout << "Carrito guardado.\n";
+}
+
+vector<ProductoEnCarrito> cargarCarritoDesdeArchivo(int idUsuario) {
+    vector<ProductoEnCarrito> carrito;
+    string archivo = "Carrito_" + to_string(idUsuario) + ".txt";
+    ifstream f(archivo);
+
+    if (!f.is_open()) return carrito;
+
+    string linea;
+    getline(f, linea);
+
+    while (getline(f, linea)) {
+        auto campos = split(linea, ',');
+        if (campos.size() < 4) continue;
+
+        ProductoEnCarrito p;
+        p.idProducto = stoi(campos[0]);
+        p.nombre = campos[1];
+        p.precio = stod(campos[2]);
+        p.cantidad = stoi(campos[3]);
+
+        carrito.push_back(p);
+    }
+    return carrito;
+}
+
+void mostrarCarrito(const vector<ProductoEnCarrito> &carrito) {
+    for (auto &p : carrito) {
+        cout << p.idProducto << " - " << p.nombre << " x" << p.cantidad << "\n";
+    }
+}
+
+
+int main() {
+
+    const string rutaUsuarios = "Usuarios.txt";
+    const string rutaProductos = "Productos.txt";
+    const string rutaComentarios = "Comentarios.txt";
+
+    auto usuarios = cargarUsuarios(rutaUsuarios);
+    auto productos = cargarProductos(rutaProductos);
+    auto comentarios = cargarComentarios(rutaComentarios);
+
+    if (usuarios.empty()) cout << "No cargaron usuarios.\n";
+
+    cout << "Correo: ";
+    string email;
+    getline(cin, email);
+
+    cout << "Contraseña: ";
+    string pass;
+    getline(cin, pass);
+
+    Usuario usuarioActual;
+    bool ok = false;
+
+    for (auto &u : usuarios) {
+        if (u.correoElectronico == email && u.contraseña == pass) {
+            usuarioActual = u;
+            ok = true;
+            break;
+        }
+    }
+
+    if (!ok) {
+        cout << "Usuario inválido.\n";
+        return 0;
+    }
+
+    cout << "\nBienvenido " << usuarioActual.nombre << "\n";
+
+    auto carrito = cargarCarritoDesdeArchivo(usuarioActual.idUsuario);
+
+    while (true) {
+        cout << "\n--- MENU ---\n";
+        cout << "1) Listar productos con poco stock\n";
+        cout << "2) Mostrar comentarios desde fecha\n";
+        cout << "3) Listar usuarios\n";
+        cout << "4) Reportes avanzados (PARCIAL)\n";
+        cout << "5) Salir\n";
+
+        string op;
+        getline(cin, op);
+
+        if (op == "1") listarProductosPorStock(productos);
+        else if (op == "2") {
+            cout << "Fecha (YYYY-MM-DD): ";
+            string f; getline(cin, f);
+            comentariosDesdeFecha(comentarios, f);
+        }
+        else if (op == "3") listarUsuariosSinClave(usuarios);
+
+        else if (op == "4") {
+            while (true) {
+                cout << "\n--- REPORTES AVANZADOS (PARCIAL) ---\n";
+                cout << "1) Top 5 menor stock\n";
+                cout << "2) Cantidad comentarios fecha\n";
+                cout << "3) Precio máximo y mínimo\n";
+                cout << "4) Volver\n";
+                string r;
+                getline(cin, r);
+
+                if (r == "1") reporteTop5MenorStock(productos);
+                else if (r == "2") {
+                    cout << "Fecha: ";
+                    string f; getline(cin, f);
+                    reporteCantidadComentariosFecha(comentarios, f);
+                }
+                else if (r == "3") reportePrecioMaxMin(productos);
+                else break;
+            }
+        }
+
+        else if (op == "5") break;
+    }
+
+    return 0;
+}
